@@ -1,0 +1,4 @@
+qnt=125,entidade=[Autor ],qnt_campos=[3 ],campos=[id,nome,sobrenome ],tamanho=[6,20,20 ],tipo=[int,char,char ],versao=[1.0 ]
+qnt=159,entidade=[Livro ],qnt_campos=[5 ],campos=[id,titulo,editora,anoPublicacao,isbn ],tamanho=[6,30,30,11,20 ],tipo=[int,char,char,int,char ],versao=[1.0 ]
+qnt=164,entidade=[Leitor ],qnt_campos=[6 ],campos=[id,nome,fone,endereco,cidade,estado ],tamanho=[6,30,20,40,40,2 ],tipo=[int,char,char,int,int,int ],versao=[1.0 ]
+qnt=135,entidade=[AutorDoLivro ],qnt_campos=[3 ],campos=[autorId,livroId,sequence ],tamanho=[4,6,2 ],tipo=[int,int,int ],versao=[1.0 ]
