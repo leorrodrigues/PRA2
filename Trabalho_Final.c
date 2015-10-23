@@ -133,8 +133,7 @@ void writeEntity(char *nome){
             string[0]='\0';
         }
         else if(strcmp(entidadeGeral.tipos[i],"char")==0){
-           __fpurge(stdin);
-            //fflush(stdin);
+            __fpurge(stdin);
             gets(string);
             if(strcmp(entidadeGeral.campos[i],"id")==0){
                 auxTabela=findOne(nome,atoi(string));
@@ -153,34 +152,57 @@ void writeEntity(char *nome){
 }
 
 void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista abre para leitura
-    if(!(arqGeral=fopen("Autor","rb"))){
-        arqGeral=fopen("Autor","wb");
-        fwrite("qnt=107,entidade=[Autor],qnt_campos=[3],campos=[id,nome,sobrenome],tamanho=[6,20,20],tipo=[int,char,char]",sizeof(char),107,arqGeral);
-        fclose(arqGeral);
+    char buffer[500],entidade[100],campos[500],tipo[500],tamanhos[500],versao[10],aux[5];
+    int qnt_campos,tamanho_header,i,j=0,k=0;
+    tabela gravar;
+    FILE *fp;
+    arqGeral=fopen("configDB","r");
+    if(!arqGeral){
+        puts("Erro na abertura do arquivo do DataBase");
     }
-    else
-        fclose(arqGeral);
-    if(!(arqGeral=fopen("Livro","rb"))){
-        arqGeral=fopen("Livro","wb");
-        fwrite("qnt=140,entidade=[Livro],qnt_campos=[5],campos=[id,titulo,editora,anoPublicacao,isbn],tamanho=[6,30,30,11,20],tipo=[int,char,char,int,char]",sizeof(char),140,arqGeral);
-        fclose(arqGeral);
+    else{
+        while(fgets(buffer,sizeof(buffer),arqGeral)){
+            strcat(buffer,"\0");
+            //printf("%s \n",buffer);
+            //puts("\n\n");
+            if(sscanf(buffer,"qnt=%i,entidade=[%s ],qnt_campos=[%i ],campos=[%s ],tamanho=[%s ],tipo=[%s ],versao=[%s ]",&tamanho_header,entidade,&qnt_campos,campos,tamanhos,tipo,versao)==7){
+                if(!(fp=fopen(entidade,"rb"))){
+                    if(fp=fopen(entidade,"wb")){
+                        fwrite(buffer,sizeof(char),tamanho_header,fp);
+                        fclose(fp);
+                    }
+                }
+                else{
+                    fseek(fp,tamanho_header-6,SEEK_SET);
+                    fread(aux,sizeof(char),3,fp);
+                    if(atof(versao)<atof(aux)){
+                        printf("\n\nERRO >> ARQUIVO CONTEM UMA VERSAO SUPERIOR A DA CONFIGURACAO DO BD\nENCERRANDO O PROGRAMA\n\n");
+                        fclose(fp);
+                        exit(0);
+                    }
+                    else if(atof(versao)==atof(aux)){
+                        printf("VERSAO DO ARQUIVO EM DIA\n");
+                        fclose(fp);
+                    }
+                    else if(atof(versao)>atof(aux)){
+                        FILE *fp2;
+                        printf("ARQUIVO DESATUALIZADO >> RECRIANDO\n");
+                        if(fp2=fopen("aux","wb")){
+                            fwrite(buffer,sizeof(char),tamanho_header,fp2);
+                            fclose(fp2);
+                        }
+                        fclose(fp);
+                        remove(entidade);
+                        rename("aux",entidade);
+                    }
+                }
+            }
+            else{
+                puts("Erro no sscanf!");
+            }
+        }
     }
-    else
-        fclose(arqGeral);
-    if(!(arqGeral=fopen("Leitor","rb"))){
-        arqGeral=fopen("Leitor","wb");
-        fwrite("qnt=145,entidade=[Leitor],qnt_campos=[6],campos=[id,nome,fone,endereco,cidade,estado],tamanho=[6,30,20,40,40,2],tipo=[int,char,char,int,int,]",sizeof(char),145,arqGeral);
-        fclose(arqGeral);
-    }
-    else
-        fclose(arqGeral);
-    if(!(arqGeral=fopen("AutorDoLivro","rb"))){
-        arqGeral=fopen("AutorDoLivro","wb");
-        fwrite("qnt=116,entidade=[AutorDoLivro],qnt_campos=[3],campos=[autorId,livroId,sequence],tamanho=[4,6,2],tipo=[int,int,int]",sizeof(char),116,arqGeral);
-        fclose(arqGeral);
-    }
-    else
-        fclose(arqGeral);
+    fclose(arqGeral);
 }
 
 void readFiles(char *nome){
@@ -411,7 +433,6 @@ void removeEntity(char *nome){
     fclose(arqGeral);
 }
 
-
 void carrega_entidadeGeral(char *nome){
     char buffer[200],auxiliar[50];
     int tamanho,i,j,k,cont=0,cont_campos,cont_tamanhos,cont_tipos;
@@ -434,7 +455,7 @@ void carrega_entidadeGeral(char *nome){
                 auxiliar[0]='\0';
                 i++;
                 cont++;
-                while(buffer[i]!=']'){
+                while(buffer[i]!=']' && buffer[i]!=' '){
                     if(buffer[i]==','){
                         if(cont==3){
                             entidadeGeral.campos[cont_campos]=(char *)malloc(sizeof(char)*100);
