@@ -43,34 +43,29 @@ void mostraIndex(char *nome);
 int main(){
     int opc;
     createFiles();
+    return 0;
+}
+
+void menu(char **vet_nome,int tam_vet){
+    int opc,j;
     while(1){
         puts("\t\tMENU DE ENTIDADES\t\t\n");
-        puts("1- Autor");
-        puts("2- Leitor");
-        puts("3- Livro");
-        puts("4- Autor Do Livro");
-        puts("0- Sair");
+        for(j=0;j<tam_vet;j++){
+            printf("%i- %s\n",j+1,vet_nome[j]);
+        }
+        printf("0- Sair\n");
         printf(":>> ");
         scanf("%i",&opc);
-        if(opc==1){
-            menuCRUD("Autor");
-        }
-        else if(opc==2){
-            menuCRUD("Leitor");
-        }
-        else if(opc==3){
-            menuCRUD("Livro");
-        }
-        else if(opc==4){
-            menuCRUD("AutorDoLivro");
-        }
-        else if(opc==0)
+        if(opc==0){
             break;
+        }
+        else if(opc>0 && opc<=tam_vet){
+            menuCRUD(vet_nome[opc-1]);
+        }
         else{
             puts("Opcao Invalida!\n");
         }
     }
-    return 0;
 }
 
 void menuCRUD(char *nome){
@@ -152,20 +147,23 @@ void writeEntity(char *nome){
 }
 
 void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista abre para leitura
-    char buffer[500],entidade[100],campos[500],tipo[500],tamanhos[500],versao[10],aux[5];
-    int qnt_campos,tamanho_header,i,j=0,k=0;
+    char buffer[500],entidade[100],campos[500],tipo[500],tamanhos[500],versao[10],aux[5],**vet_entidades;
+    int qnt_campos,tamanho_header,i=0;
     tabela gravar;
     FILE *fp;
+    vet_entidades=(char **)malloc(sizeof(char *));
     arqGeral=fopen("configDB","r");
     if(!arqGeral){
         puts("Erro na abertura do arquivo do DataBase");
     }
     else{
         while(fgets(buffer,sizeof(buffer),arqGeral)){
+            i++;
             strcat(buffer,"\0");
-            //printf("%s \n",buffer);
-            //puts("\n\n");
             if(sscanf(buffer,"qnt=%i,entidade=[%s ],qnt_campos=[%i ],campos=[%s ],tamanho=[%s ],tipo=[%s ],versao=[%s ]",&tamanho_header,entidade,&qnt_campos,campos,tamanhos,tipo,versao)==7){
+                vet_entidades=(char **)realloc(vet_entidades,sizeof(char *)*i);
+                vet_entidades[i-1]=(char *)malloc(sizeof(char)*100);
+                strcpy(vet_entidades[i-1],entidade);
                 if(!(fp=fopen(entidade,"rb"))){
                     if(fp=fopen(entidade,"wb")){
                         fwrite(buffer,sizeof(char),tamanho_header,fp);
@@ -203,6 +201,7 @@ void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista 
         }
     }
     fclose(arqGeral);
+    menu(vet_entidades,i);
 }
 
 void readFiles(char *nome){
