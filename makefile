@@ -1,6 +1,6 @@
 all: Trabalho_Final
 
-Trabalho_Final.exe: Trabalho_Final.o
+Trabalho_Final: Trabalho_Final.o
 	gcc -o Trabalho_Final Trabalho_Final.o
 
 Trabalho_Final.o: Trabalho_Final.c
