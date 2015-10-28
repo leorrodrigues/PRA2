@@ -400,6 +400,7 @@ void changeEntity(char *nome){
 void removeEntity(char *nome){
     int ID,qnt_elementos=0,i,j,flag=0;
     tabela *vet;
+    char string[1000];
     puts("Digite o ID do elemento que deseja remover");
     scanf("%i",&ID);
     vet=chargeEntity(nome);
@@ -419,19 +420,11 @@ void removeEntity(char *nome){
         return;
     }
     else{
+        arqGeral=fopen(nome,"rb");
+        fread(string,sizeof(char),entidadeGeral.tamanho_header,arqGeral);
+        fclose(arqGeral);
         arqGeral=fopen(nome,"wb");
-        if(strcmp(nome,"Autor")==0){
-            fwrite("qnt=107,entidade=[Autor],qnt_campos=[3],campos=[id,nome,sobrenome],tamanho=[6,20,20],tipo=[int,char,char]",sizeof(char),107,arqGeral);
-        }
-        else if(strcmp(nome,"Leitor")==0){
-            fwrite("qnt=145,entidade=[Leitor],qnt_campos=[6],campos=[id,nome,fone,endereco,cidade,estado],tamanho=[6,30,20,40,40,2],tipo=[int,char,char,int,int,int]",sizeof(char),145,arqGeral);
-        }
-        else if(strcmp(nome,"Livro")==0){
-            fwrite("qnt=140,entidade=[Livro],qnt_campos=[5],campos=[id,titulo,editora,anoPublicacao,isbn],tamanho=[6,30,30,11,20],tipo=[int,char,char,int,char]",sizeof(char),140,arqGeral);
-        }
-        else if(strcmp(nome,"AutorDoLivro")==0){
-            fwrite("qnt=116,entidade=[AutorDoLivro],qnt_campos=[3],campos=[autorId,livroId,sequence],tamanho=[4,6,2],tipo=[int,int,int]",sizeof(char),116,arqGeral);
-        }
+        fwrite(string,sizeof(char),entidadeGeral.tamanho_header,arqGeral);
         for(i=0;i<qnt_elementos;i++){
             for(j=0;j<entidadeGeral.qtd_campos;j++){
                 if(ID!=atoi(vet[i].campos[0]))
