@@ -1,21 +1,19 @@
-#include <stdio.h>
-  #include <stdlib.h>
-
   #define MAX 4
   #define MIN 2
 
   struct btreeNode {
-        int val[MAX + 1], count;
+        int val[MAX + 1],posicao[MAX+1], count;
         struct btreeNode *link[MAX + 1];
   };
 
   struct btreeNode *root;
 
   /* creating new node */
-  struct btreeNode * createNode(int val, struct btreeNode *child) {
+  struct btreeNode * createNode(int val,int posicao, struct btreeNode *child) {
         struct btreeNode *newNode;
         newNode = (struct btreeNode *)malloc(sizeof(struct btreeNode));
         newNode->val[1] = val;
+        newNode->posicao[1]=posicao;
         newNode->count = 1;
         newNode->link[0] = root;
         newNode->link[1] = child;
@@ -23,21 +21,23 @@
   }
 
   /* Places the value in appropriate position */
-  void addValToNode(int val, int pos, struct btreeNode *node,
+  void addValToNode(int val, int pos,int posicao, struct btreeNode *node,
                         struct btreeNode *child) {
         int j = node->count;
         while (j > pos) {
                 node->val[j + 1] = node->val[j];
+                node->posicao[j+1]=node->posicao[j];
                 node->link[j + 1] = node->link[j];
                 j--;
         }
         node->val[j + 1] = val;
+        node->posicao[j+1]=posicao;
         node->link[j + 1] = child;
         node->count++;
   }
 
   /* split the node */
-  void splitNode (int val, int *pval, int pos, struct btreeNode *node,
+  void splitNode (int val, int *pval, int pos,int posicao, struct btreeNode *node,
      struct btreeNode *child, struct btreeNode **newNode) {
         int median, j;
 
@@ -57,9 +57,9 @@
         (*newNode)->count = MAX - median;
 
         if (pos <= MIN) {
-                addValToNode(val, pos, node, child);
+                addValToNode(val, pos,posicao, node, child);
         } else {
-                addValToNode(val, pos - median, *newNode, child);
+                addValToNode(val, pos - median, posicao, *newNode, child);
         }
         *pval = node->val[node->count];
         (*newNode)->link[0] = node->link[node->count];
@@ -67,7 +67,7 @@
   }
 
   /* sets the value val in the node */
-  int setValueInNode(int val, int *pval,
+  int setValueInNode(int val, int *pval, int posicao,
      struct btreeNode *node, struct btreeNode **child) {
 
         int pos;
@@ -87,11 +87,11 @@
                         return 0;
                 }
         }
-        if (setValueInNode(val, pval, node->link[pos], child)) {
+        if (setValueInNode(val, pval,posicao, node->link[pos], child)) {
                 if (node->count < MAX) {
-                        addValToNode(*pval, pos, node, *child);
+                        addValToNode(*pval, pos,posicao, node, *child);
                 } else {
-                        splitNode(*pval, pval, pos, node, *child, child);
+                        splitNode(*pval, pval, pos, posicao, node, *child, child);
                         return 1;
                 }
         }
@@ -99,13 +99,13 @@
   }
 
   /* insert val in B-Tree */
-  void insertion(int val) {
+  void insertion(int val,int posicao) {
         int flag, i;
         struct btreeNode *child;
 
-        flag = setValueInNode(val, &i, root, &child);
+        flag = setValueInNode(val, &i,posicao, root, &child);
         if (flag)
-                root = createNode(i, child);
+                root = createNode(i,posicao, child);
   }
 
   /* shifts value from parent to right child */
@@ -205,38 +205,27 @@
   }
 
   /* B-Tree Traversal */
-  void traversal(struct btreeNode *myNode) {
+  void traversal(struct btreeNode *myNode, char *index) {
+        FILE *arqIndice;
         int i;
-        if (myNode) {
+        arqIndice = fopen(index,"ab");
+        if(arqIndice!=NULL){
+            if (myNode) {
                 for (i = 0; i < myNode->count; i++) {
-                        traversal(myNode->link[i]);
-                        printf("%d ", myNode->val[i + 1]);
+                        traversal(myNode->link[i],index);
+                        if(arqIndice!=NULL){
+                            fwrite(&(myNode->val[i+1]),sizeof(int),1,arqIndice);
+                            fwrite(&(myNode->posicao[i+1]),sizeof(int),1,arqIndice);
+                        }
+                        else{
+                            puts("Erro na abertura do arquivo de indices!");
+                        }
                 }
-                traversal(myNode->link[i]);
+                traversal(myNode->link[i],index);
+            }
+            fclose(arqIndice);
         }
-  }
-
-  int main() {
-        int val, ch;
-        while (1) {
-                printf("1. Inserção\t2. Mostrar\n");
-                printf("0. Sair\nEntre com a opcao:");
-                scanf("%d", &ch);
-                switch (ch) {
-                        case 1:
-                                printf("Entre com o elemento a ser inserido:");
-                                scanf("%d", &val);
-                                insertion(val);
-                                break;
-                        case 2:
-                                traversal(root);
-                                break;
-                        case 0:
-                                exit(0);
-                        default:
-                                printf("Voce entrou com uma opcao invalida!!\n");
-                                break;
-                }
-                printf("\n");
+        else{
+            puts("Erro na abertura do arquivo INDEX!");
         }
   }
