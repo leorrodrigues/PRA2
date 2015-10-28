@@ -23,6 +23,7 @@ THE SOFTWARE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "btree.h"
 
 /***************************************************************************************/
 /* Equipe: Bruna de Oliveira    */
@@ -63,7 +64,6 @@ void ordena(char *nome);
 void mostraIndex(char *nome);
 
 int main(){
-    int opc;
     createFiles();
     return 0;
 }
@@ -91,7 +91,7 @@ void menu(char **vet_nome,int tam_vet){
 }
 
 void menuCRUD(char *nome){
-    int opc,i;
+    int opc;
     carrega_entidadeGeral(nome);
     puts("\t\tMENU CRUD\t\t\n");
     puts("1- Inserir um novo elemento\n");
@@ -126,16 +126,15 @@ void menuCRUD(char *nome){
 
 void writeEntity(char *nome){
     char *string,aux[100];
-    int numero,i;
+    int i;
     tabela auxTabela;
     string=&aux;
     arqGeral=fopen(nome,"ab");
     for(i=0;i<entidadeGeral.qtd_campos;i++){
-        printf("Digite o %s:\n",entidadeGeral.campos[i]);
+        printf("Digite o %s:\n", entidadeGeral.campos[i]);
         if(strcmp(entidadeGeral.tipos[i],"int")==0){
-             __fpurge(stdin);
-            //fflush(stdin);
-            gets(string);
+            __fpurge(stdin);
+            scanf("%[^\n]s",string);
             //fwrite(entidadeGeral.campos[i],sizeof(entidadeGeral.campos[i]),1,arqGeral);
             if(strcmp(entidadeGeral.campos[i],"id")==0){
                 fclose(arqGeral);
@@ -151,7 +150,7 @@ void writeEntity(char *nome){
         }
         else if(strcmp(entidadeGeral.tipos[i],"char")==0){
             __fpurge(stdin);
-            gets(string);
+            scanf("%[^\n]s",string);
             if(strcmp(entidadeGeral.campos[i],"id")==0){
                 auxTabela=findOne(nome,atoi(string));
                 if(auxTabela.qtd_campos!=-1){
@@ -171,7 +170,6 @@ void writeEntity(char *nome){
 void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista abre para leitura
     char buffer[500],entidade[100],campos[500],tipo[500],tamanhos[500],versao[10],aux[5],**vet_entidades;
     int qnt_campos,tamanho_header,i=0;
-    tabela gravar;
     FILE *fp;
     vet_entidades=(char **)malloc(sizeof(char *));
     arqGeral=fopen("configDB","r");
@@ -187,7 +185,7 @@ void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista 
                 vet_entidades[i-1]=(char *)malloc(sizeof(char)*100);
                 strcpy(vet_entidades[i-1],entidade);
                 if(!(fp=fopen(entidade,"rb"))){
-                    if(fp=fopen(entidade,"wb")){
+                    if((fp=fopen(entidade,"wb"))!=NULL){
                         fwrite(buffer,sizeof(char),tamanho_header,fp);
                         fclose(fp);
                     }
@@ -207,7 +205,7 @@ void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista 
                     else if(atof(versao)>atof(aux)){
                         FILE *fp2;
                         printf("ARQUIVO DESATUALIZADO >> RECRIANDO\n");
-                        if(fp2=fopen("aux","wb")){
+                        if((fp2=fopen("aux","wb"))!=NULL){
                             fwrite(buffer,sizeof(char),tamanho_header,fp2);
                             fclose(fp2);
                         }
@@ -228,7 +226,7 @@ void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista 
 
 void readFiles(char *nome){
     char string[1000]="\0";
-    int tam_arq=0,i,j,numero;
+    int tam_arq=0,i;
     arqGeral=fopen(nome,"rb");
     fseek(arqGeral,0,SEEK_END);
     tam_arq=ftell(arqGeral);
@@ -260,7 +258,7 @@ void readFiles(char *nome){
 tabela findOne(char *nome,int ID){
     tabela aux;
     char string[1000]="\0";
-    int tam_arq=0,i,j,numero;
+    int tam_arq=0,i;
     aux.campos=(char **)malloc(sizeof(char *)*entidadeGeral.qtd_campos);
     aux.tipos=(char **)malloc(sizeof(char *)*entidadeGeral.qtd_campos);
     aux.tamanhos=(int *)malloc(sizeof(int)*entidadeGeral.qtd_campos);
@@ -315,7 +313,7 @@ tabela findOne(char *nome,int ID){
 tabela *chargeEntity(char *nome){
     tabela *vet;
     char string[1000]="\0";
-    int tam_arq=0,i,j,numero,cont=0;
+    int tam_arq=0,i,cont=0;
     vet=(tabela *)malloc(sizeof(tabela));
     arqGeral=fopen(nome,"rb");
     fseek(arqGeral,0,SEEK_END);
@@ -357,7 +355,7 @@ tabela *chargeEntity(char *nome){
 void changeEntity(char *nome){
     int ID,qnt_elementos=0,i,j,flag=0;
     tabela *vet;
-    char novo[100];
+    char novo[100],string[1000];
     puts("Digite o ID do elemento que deseja alterar");
     scanf("%i",&ID);
     vet=chargeEntity(nome);
@@ -385,19 +383,11 @@ void changeEntity(char *nome){
         return;
     }
     else{
+        arqGeral=fopen(nome,"rb");
+        fread(string,sizeof(char),entidadeGeral.tamanho_header,arqGeral);
+        fclose(arqGeral);
         arqGeral=fopen(nome,"wb");
-        if(strcmp(nome,"Autor")==0){
-            fwrite("qnt=107,entidade=[Autor],qnt_campos=[3],campos=[id,nome,sobrenome],tamanho=[6,20,20],tipo=[int,char,char]",sizeof(char),107,arqGeral);
-        }
-        else if(strcmp(nome,"Leitor")==0){
-            fwrite("qnt=145,entidade=[Leitor],qnt_campos=[6],campos=[id,nome,fone,endereco,cidade,estado],tamanho=[6,30,20,40,40,2],tipo=[int,char,char,int,int,int]",sizeof(char),145,arqGeral);
-        }
-        else if(strcmp(nome,"Livro")==0){
-            fwrite("qnt=140,entidade=[Livro],qnt_campos=[5],campos=[id,titulo,editora,anoPublicacao,isbn],tamanho=[6,30,30,11,20],tipo=[int,char,char,int,char]",sizeof(char),140,arqGeral);
-        }
-        else if(strcmp(nome,"AutorDoLivro")==0){
-            fwrite("qnt=116,entidade=[AutorDoLivro],qnt_campos=[3],campos=[autorId,livroId,sequence],tamanho=[4,6,2],tipo=[int,int,int]",sizeof(char),116,arqGeral);
-        }
+        fwrite(string,sizeof(char),entidadeGeral.tamanho_header,arqGeral);
         for(i=0;i<qnt_elementos;i++){
             for(j=0;j<entidadeGeral.qtd_campos;j++){
                 fwrite(vet[i].campos[j],entidadeGeral.tamanhos[j],1,arqGeral);
@@ -410,7 +400,6 @@ void changeEntity(char *nome){
 void removeEntity(char *nome){
     int ID,qnt_elementos=0,i,j,flag=0;
     tabela *vet;
-    char novo[100];
     puts("Digite o ID do elemento que deseja remover");
     scanf("%i",&ID);
     vet=chargeEntity(nome);
@@ -457,7 +446,7 @@ void removeEntity(char *nome){
 void carrega_entidadeGeral(char *nome){
     char buffer[200],auxiliar[50];
     int tamanho,i,j,k,cont=0,cont_campos,cont_tamanhos,cont_tipos;
-    if(arqGeral=fopen(nome,"rb")){
+    if((arqGeral=fopen(nome,"rb"))!=NULL){
         fseek(arqGeral,4,SEEK_SET);//andamos para pegar os valores do total do header
         fread(&buffer,sizeof(char),3,arqGeral);//lemos o valor
         buffer[3]='\0';//fechamos a string
@@ -550,7 +539,7 @@ void carrega_entidadeGeral(char *nome){
 
 void ordena(char *nome){
     char string[1000]="\0", index[100]="\0";
-    int tam_arq=0, tam_arq_aux=0,i,j,numero, count=0, ii=0, pos, v;
+    int tam_arq=0, tam_arq_aux=0,i, count=0, ii=0, pos;
     arqGeral=fopen(nome,"rb");
     fseek(arqGeral,0,SEEK_END);
     tam_arq=ftell(arqGeral);
@@ -593,78 +582,33 @@ void ordena(char *nome){
 
         for(i=0;i<count;i++){
             printf("\nid - %d, pos - %d", vet[i].id, vet[i].pos);
+            insertion(vet[i].id,vet[i].pos);
         }
-
-        heapsort(vet, count);
-
-
         strcpy(index, nome);
         strcat(index, "Index");
-        arqIndice = fopen(index,"wb");
-
-        for(i=0;i<count;i++){
-            fwrite(&vet[i],sizeof(heap),1,arqIndice);
+        if((arqIndice=fopen(index,"wb"))!=NULL){
+            fclose(arqIndice);
+            traversal(root,index);
         }
-        fclose(arqIndice);
     }
 }
-
-void heapsort(heap a[], int n){
-
-   int i = n / 2, pai, filho, t, k;
-
-
-   for (;;) {
-      if (i > 0) {
-          i--;
-          t = a[i].id;
-          k = a[i].pos;
-      } else {
-          n--;
-          if (n == 0)
-            return;
-          t = a[n].id;
-          k = a[n].pos;
-          a[n].id = a[0].id;
-          a[n].pos = a[0].pos;
-      }
-
-      pai = i;
-
-      //Primeiro será feita a comparação com o filho da esquerda.
-      filho = i * 2 + 1;
-
-      while (filho < n) {
-
-         //Se o filho da esquerda for menor do que o filho da direita,então será feita a troca do filho que será comparado.
-          if ((filho + 1 < n)  &&  (a[filho + 1].id > a[filho].id))
-              filho++;
-          if (a[filho].id > t){
-             a[pai].id = a[filho].id;
-             a[pai].pos = a[filho].pos;
-             pai = filho;
-             filho = pai * 2 + 1;
-          }else
-             break;
-          }
-            a[pai].id = t;
-            a[pai].pos = k;
-        }
-   }
 
 void mostraIndex(char *nome){
     char nomea[100];
     heap aux;
-    int tam = 0;
     strcpy(nomea,nome);
     strcat(nomea,"Index");
     arqIndice = fopen(nomea, "rb");
-    while(!feof(arqIndice)){
-        fread(&aux,sizeof(heap),1,arqIndice);
-        printf("\nid: %d, pos: %d", aux.id, aux.pos);
+    if(arqIndice!=NULL){
+        while(!feof(arqIndice)){
+            fread(&aux,sizeof(heap),1,arqIndice);
+            printf("\nid: %d, pos: %d", aux.id, aux.pos);
+        }
+        __fpurge(stdout);
+        fclose(arqIndice);
     }
-    __fpurge(stdout);
+    else{
+        puts("Nao contem nenhum elemento na entidade!");
+    }
     //fflush(stdout);  //pra windows
-
-    fclose(arqIndice);
 }
