@@ -125,12 +125,19 @@ void menuCRUD(char *nome){
 }
 
 void writeEntity(char *nome){
-    char *string,aux[100];
-    int i;
+    char *string,aux[1000];
+    int i,rowid;
     tabela auxTabela;
-    string=&aux;
+    string=aux;
     arqGeral=fopen(nome,"ab");
-    for(i=0;i<entidadeGeral.qtd_campos;i++){
+    rowid=ftell(arqGeral);
+    sprintf(string,"%i",rowid);
+    printf("rowid!: %s",string);
+    __fpurge(stdin);
+    fwrite(string,sizeof(char),4,arqGeral);
+    rowid=ftell(arqGeral);
+    printf("rowid!: %i",rowid);
+    for(i=1;i<entidadeGeral.qtd_campos;i++){
         printf("Digite o %s:\n", entidadeGeral.campos[i]);
         if(strcmp(entidadeGeral.tipos[i],"int")==0){
             __fpurge(stdin);
@@ -142,6 +149,17 @@ void writeEntity(char *nome){
                 arqGeral=fopen(nome,"ab");
                 if(auxTabela.qtd_campos!=-1){
                     puts("Entidade com este ID ja existe!\nProcure digitar outro ID\n");
+                    rowid=ftell(arqGeral);
+                    rowid-=4;// desconta a gravacao do rowid que contem o id duplicado!
+                    rewind(arqGeral);
+                    fclose(arqGeral);
+                    arqGeral=fopen(nome,"rb");
+                    __fpurge(stdin);
+                    fread(string,sizeof(char),rowid,arqGeral);
+                    fclose(arqGeral);
+                    arqGeral=fopen(nome,"wb");
+                    fwrite(string,sizeof(char),rowid,arqGeral);
+                    fclose(arqGeral);
                     return;
                 }
             }
@@ -163,7 +181,13 @@ void writeEntity(char *nome){
             string[0]='\0';
         }
     }
+    string[0]='\0';
     fclose(arqGeral);
+    arqGeral=fopen(nome,"rb");
+    fseek(arqGeral,0,SEEK_END);
+    rowid=ftell(arqGeral);
+    rewind(arqGeral);
+    fread(string,sizeof(char),rowid,arqGeral);
     ordena(nome);
 }
 
@@ -271,6 +295,7 @@ tabela findOne(char *nome,int ID){
     tam_arq=ftell(arqGeral);
     rewind(arqGeral);
     tam_arq-=entidadeGeral.tamanho_header;
+    tam_arq-=4;
     fseek(arqGeral,entidadeGeral.tamanho_header,SEEK_CUR);
     if(tam_arq!=0){
         while(tam_arq!=0){
@@ -365,8 +390,8 @@ void changeEntity(char *nome){
         i++;
     }
     for(i=0;i<qnt_elementos;i++){
-        if(ID==atoi(vet[i].campos[0])){
-            for(j=1;j<entidadeGeral.qtd_campos;j++){
+        if(ID==atoi(vet[i].campos[1])){
+            for(j=2;j<entidadeGeral.qtd_campos;j++){
                  __fpurge(stdin);
             	//fflush(stdin);
                 printf("Digite o novo %s\n",entidadeGeral.campos[j]);
@@ -410,7 +435,7 @@ void removeEntity(char *nome){
         i++;
     }
     for(i=0;i<qnt_elementos;i++){
-        if(ID==atoi(vet[i].campos[0])){
+        if(ID==atoi(vet[i].campos[1])){
             flag=1;
             break;
         }
@@ -427,7 +452,7 @@ void removeEntity(char *nome){
         fwrite(string,sizeof(char),entidadeGeral.tamanho_header,arqGeral);
         for(i=0;i<qnt_elementos;i++){
             for(j=0;j<entidadeGeral.qtd_campos;j++){
-                if(ID!=atoi(vet[i].campos[0]))
+                if(ID!=atoi(vet[i].campos[1]))
                     fwrite(vet[i].campos[j],entidadeGeral.tamanhos[j],1,arqGeral);
             }
         }
@@ -546,7 +571,6 @@ void ordena(char *nome){
     else{
         while(tam_arq!=0){
             for(i=0;i<entidadeGeral.qtd_campos;i++){
-                fread(string,sizeof(char),entidadeGeral.tamanhos[i],arqGeral);
                 tam_arq-=entidadeGeral.tamanhos[i];
             }
 	        count++;
@@ -561,7 +585,7 @@ void ordena(char *nome){
             for(i=0;i<entidadeGeral.qtd_campos;i++){
                 fread(string,sizeof(char),entidadeGeral.tamanhos[i],arqGeral);
                 if(strcmp(entidadeGeral.tipos[i],"int")==0){
-                        if((strcmp(entidadeGeral.campos[i],"id")==0)){
+                    if((strcmp(entidadeGeral.campos[i],"id")==0)){
                          vet[ii].id = atoi(string);
                     }
                 }
@@ -584,6 +608,7 @@ void ordena(char *nome){
             traversal(root,index);
         }
     }
+    root=NULL;
 }
 
 void mostraIndex(char *nome){
