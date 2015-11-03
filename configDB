@@ -1,4 +1,4 @@
-qnt=137,entidade=[Autor ],qnt_campos=[4 ],campos=[rowid,id,nome,sobrenome ],tamanho=[4,6,20,20 ],tipo=[int,int,char,char ],versao=[1.0 ]
-qnt=171,entidade=[Livro ],qnt_campos=[6 ],campos=[rowid,id,titulo,editora,anoPublicacao,isbn ],tamanho=[4,6,30,30,11,20 ],tipo=[int,int,char,char,int,char ],versao=[1.0 ]
-qnt=176,entidade=[Leitor ],qnt_campos=[7 ],campos=[rowid,id,nome,fone,endereco,cidade,estado ],tamanho=[4,6,30,20,40,40,2 ],tipo=[int,int,char,char,int,int,int ],versao=[1.0 ]
-qnt=156,entidade=[AutorDoLivro ],qnt_campos=[5 ],campos=[rowid,id,autorId,livroId,sequence ],tamanho=[4,6,6,6,2 ],tipo=[int,int,int,int,int ],versao=[1.0 ]
+qnt=178,entidade=[Autor ],qnt_campos=[4 ],campos=[rowid,id,nome,sobrenome ],tamanho=[4,6,20,20 ],tipo=[int,int,char,char ],relacao=[AutorDoLivro ],localizacao=[3 ],versao=[1.2 ]
+qnt=212,entidade=[Livro ],qnt_campos=[6 ],campos=[rowid,id,titulo,editora,anoPublicacao,isbn ],tamanho=[4,6,30,30,11,20 ],tipo=[int,int,char,char,int,char ],relacao=[AutorDoLivro ],localizacao=[4 ],versao=[1.0 ]
+qnt=208,entidade=[Leitor ],qnt_campos=[7 ],campos=[rowid,id,nome,fone,endereco,cidade,estado ],tamanho=[4,6,30,20,40,40,2 ],tipo=[int,int,char,char,int,int,int ],relacao=[-1 ],localizacao=[-1 ],versao=[1.0 ]
+qnt=188,entidade=[AutorDoLivro ],qnt_campos=[5 ],campos=[rowid,id,autorId,livroId,sequence ],tamanho=[4,6,6,6,2 ],tipo=[int,int,int,int,int ],relacao=[-1 ],localizacao=[-1 ],versao=[1.0 ]
