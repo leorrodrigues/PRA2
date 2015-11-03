@@ -217,9 +217,9 @@ void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista 
                     fseek(fp,tamanho_header-6,SEEK_SET);
                     fread(aux,sizeof(char),3,fp);
                     if(atof(versao)<atof(aux)){
-                        printf("\n\nERRO >> ARQUIVO CONTEM UMA VERSAO SUPERIOR A DA CONFIGURACAO DO BD\nENCERRANDO O PROGRAMA\n\n");
+                        //printf("\n\nERRO >> ARQUIVO CONTEM UMA VERSAO SUPERIOR A DA CONFIGURACAO DO BD\nENCERRANDO O PROGRAMA\n\n");
                         fclose(fp);
-                        exit(1);
+                        exit(0);
                     }
                     else if(atof(versao)==atof(aux)){
                         //printf("VERSAO DO ARQUIVO EM DIA\n");
