@@ -33,10 +33,10 @@ THE SOFTWARE.
 
 typedef struct{
     char nome_entidade[100];
-    int qtd_campos;
     char **campos;
-    int *tamanhos;
     char **tipos;
+    int *tamanhos;
+    int qtd_campos;
     int tamanho_header;
 } tabela;
 
@@ -132,11 +132,9 @@ void writeEntity(char *nome){
     arqGeral=fopen(nome,"ab");
     rowid=ftell(arqGeral);
     sprintf(string,"%i",rowid);
-    printf("rowid!: %s",string);
     __fpurge(stdin);
     fwrite(string,sizeof(char),4,arqGeral);
     rowid=ftell(arqGeral);
-    printf("rowid!: %i",rowid);
     for(i=1;i<entidadeGeral.qtd_campos;i++){
         printf("Digite o %s:\n", entidadeGeral.campos[i]);
         if(strcmp(entidadeGeral.tipos[i],"int")==0){
@@ -192,7 +190,7 @@ void writeEntity(char *nome){
 }
 
 void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista abre para leitura
-    char buffer[500],entidade[100],campos[500],tipo[500],tamanhos[500],versao[10],aux[5],**vet_entidades;
+    char buffer[500],string[500],entidade[100],campos[500],tipo[500],tamanhos[500],relacao[500],localizacao[5],versao[10],aux[5],**vet_entidades;
     int qnt_campos,tamanho_header,i=0;
     FILE *fp;
     vet_entidades=(char **)malloc(sizeof(char *));
@@ -204,13 +202,14 @@ void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista 
         while(fgets(buffer,sizeof(buffer),arqGeral)){
             i++;
             strcat(buffer,"\0");
-            if(sscanf(buffer,"qnt=%i,entidade=[%s ],qnt_campos=[%i ],campos=[%s ],tamanho=[%s ],tipo=[%s ],versao=[%s ]",&tamanho_header,entidade,&qnt_campos,campos,tamanhos,tipo,versao)==7){
+            if(sscanf(buffer,"qnt=%i,entidade=[%s ],qnt_campos=[%i ],campos=[%s ],tamanho=[%s ],tipo=[%s ],relacao=[%s ],localizacao=[%s ],versao=[%s ]",&tamanho_header,entidade,&qnt_campos,campos,tamanhos,tipo,relacao,localizacao,versao)==9){
                 vet_entidades=(char **)realloc(vet_entidades,sizeof(char *)*i);
                 vet_entidades[i-1]=(char *)malloc(sizeof(char)*100);
+                strcpy(string,buffer);
                 strcpy(vet_entidades[i-1],entidade);
-                if(!(fp=fopen(entidade,"rb"))){
+                if((fp=fopen(entidade,"rb"))==NULL){
                     if((fp=fopen(entidade,"wb"))!=NULL){
-                        fwrite(buffer,sizeof(char),tamanho_header,fp);
+                        fwrite(buffer,tamanho_header,1,fp);
                         fclose(fp);
                     }
                 }
@@ -220,15 +219,15 @@ void createFiles(){//Funcao para criar os arquivos casa nao exista, caso exista 
                     if(atof(versao)<atof(aux)){
                         printf("\n\nERRO >> ARQUIVO CONTEM UMA VERSAO SUPERIOR A DA CONFIGURACAO DO BD\nENCERRANDO O PROGRAMA\n\n");
                         fclose(fp);
-                        exit(0);
+                        exit(1);
                     }
                     else if(atof(versao)==atof(aux)){
-                        printf("VERSAO DO ARQUIVO EM DIA\n");
+                        //printf("VERSAO DO ARQUIVO EM DIA\n");
                         fclose(fp);
                     }
                     else if(atof(versao)>atof(aux)){
                         FILE *fp2;
-                        printf("ARQUIVO DESATUALIZADO >> RECRIANDO\n");
+                        //printf("ARQUIVO DESATUALIZADO >> RECRIANDO\n");
                         if((fp2=fopen("aux","wb"))!=NULL){
                             fwrite(buffer,sizeof(char),tamanho_header,fp2);
                             fclose(fp2);
@@ -351,6 +350,7 @@ tabela *chargeEntity(char *nome){
     }
     else{
         while(tam_arq!=0){
+            puts("OI");
             cont++;
             vet=(tabela *)realloc(vet,sizeof(tabela)*cont);
             vet[cont-1].campos=(char **)malloc(sizeof(char *)*entidadeGeral.qtd_campos);
@@ -423,11 +423,13 @@ void changeEntity(char *nome){
 }
 
 void removeEntity(char *nome){
-    int ID,qnt_elementos=0,i,j,flag=0;
+    int ID,qnt_elementos=0,i=0,j,flag=0,qtd_relacoes=0,tam_header,k=0;
     tabela *vet;
-    char string[1000];
+    FILE *fp;
+    char string[1000],relacao[100],localizacao[100],nome2[100],nome3[100],**localizacoes,**relacoes,*aux;
     puts("Digite o ID do elemento que deseja remover");
     scanf("%i",&ID);
+    carrega_entidadeGeral(nome);
     vet=chargeEntity(nome);
     i=0;
     while(vet[i].qtd_campos!=-1){
@@ -447,6 +449,52 @@ void removeEntity(char *nome){
     else{
         arqGeral=fopen(nome,"rb");
         fread(string,sizeof(char),entidadeGeral.tamanho_header,arqGeral);
+        sscanf(string,"qnt=%*i,entidade=[%*s ],qnt_campos=[%*i ],campos=[%*s ],tamanho=[%*s ],tipo=[%*s ],relacao=[%s ],localizacao=[%s ],versao=[%*s ]",relacao,localizacao);
+        /*********************************************************************************/
+        /*QUEBRANDO QUANTAS RELACOES TEMOS*/
+        relacoes=(char **)malloc(sizeof(char *));
+        relacoes[i]=(char *)malloc(sizeof(char )*100);
+        aux=(char *)strtok(relacao,",");
+        if(aux!=NULL){
+            strcpy(relacoes[i],aux);
+            while(aux!=NULL){
+                i++;
+                relacoes=(char **)realloc(relacoes,sizeof(char *)*i+1);
+                relacoes[i]=(char *)malloc(sizeof(char )*100);
+                aux= (char*)strtok(NULL, ",");
+                if(aux!=NULL)
+                    strcpy(relacoes[i],aux);
+            }
+        }
+        else{
+            strcpy(relacoes[i],relacao);
+        }
+        qtd_relacoes=i;
+        /*FIM DA QUEBRA DE RELACOES*/
+        /**********************************************************************************/
+        /*QUEBRANDO QUANTAS LOCALIZACOES TEMOS*/
+        i=0;
+        localizacoes=(char **)malloc(sizeof(char *));
+        localizacoes[i]=(char *)malloc(sizeof(char )*100);
+        aux=(char *)strtok(localizacao,",");
+        if(aux!=NULL){
+            strcpy(localizacoes[i],aux);
+            while(aux!=NULL){
+                i++;
+                localizacoes=(char **)realloc(localizacoes,sizeof(char *)*i+1);
+                localizacoes[i]=(char *)malloc(sizeof(char )*100);
+                aux= (char*)strtok(NULL, ",");
+                if(aux!=NULL)
+                    strcpy(localizacoes[i],aux);
+            }
+        }
+        else{
+            strcpy(localizacoes[i],localizacao);
+        }
+        __fpurge(stdin);
+        /*FIM DA QUEBRA DE LOCALIZACOES*/
+        /**********************************************************************************/
+        /*INICIO DA EXCLUSAO NO ARQUIVO PRINCIPAL*/
         fclose(arqGeral);
         arqGeral=fopen(nome,"wb");
         fwrite(string,sizeof(char),entidadeGeral.tamanho_header,arqGeral);
@@ -456,13 +504,52 @@ void removeEntity(char *nome){
                     fwrite(vet[i].campos[j],entidadeGeral.tamanhos[j],1,arqGeral);
             }
         }
+        fclose(arqGeral);
+        /*FIM DA EXCLUSAO NO ARQUIVO PRINCIPAL*/
+        /*************************************************************************************/
+        /*EXCLUIR DOS ARQUIVOS DE RELACOES*/
+        for(k=0;k<qtd_relacoes;k++){
+            carrega_entidadeGeral(relacoes[k]);
+            vet=chargeEntity(relacoes[k]);
+            strcpy(nome2,relacoes[k]);
+            strcpy(nome3,relacoes[k]);
+            strcat(nome2,".bin");
+            rename(relacoes[k],nome2);
+            strcat(relacoes[k],".bin");
+            if((arqGeral=fopen(relacoes[k],"rb"))!=NULL){
+                char auxiliar[1000];
+                if((fp=fopen("aux","wb"))!=NULL){
+                    fread(auxiliar,sizeof(char),entidadeGeral.tamanho_header,arqGeral);
+                    fwrite(auxiliar,sizeof(char),entidadeGeral.tamanho_header,fp);
+                    i=0;
+                    while(vet[i].qtd_campos!=-1){
+                        puts("oi");
+                        for(j=0;j<entidadeGeral.qtd_campos;j++){
+                            if(ID!=atoi(vet[i].campos[atoi(localizacoes[k])-1]))
+                                fwrite(vet[i].campos[j],entidadeGeral.tamanhos[j],1,fp);
+                        }
+                        i++;
+                    }
+                }
+                fclose(fp);
+            }
+            fclose(arqGeral);
+            remove(nome2);
+            rename("aux",nome3);
+        }
+        /*FIM DE EXCLUIR DOS ARQUIVOS DE RELACOES*/
+        /*************************************************************************************/
+        /*EXCLUIR DO ARQUIVO DE INDICES*/
+        carrega_entidadeGeral(nome);
+        ordena(nome);
+        /*FIM EXCLUSAO DOS INDICES*/
+        /*************************************************************************************/
     }
     puts("Entidade Removida com Sucesso!");
-    fclose(arqGeral);
 }
 
 void carrega_entidadeGeral(char *nome){
-    char buffer[200],auxiliar[50];
+    char buffer[1000],auxiliar[50];
     int tamanho,i,j,k,cont=0,cont_campos,cont_tamanhos,cont_tipos;
     if((arqGeral=fopen(nome,"rb"))!=NULL){
         fseek(arqGeral,4,SEEK_SET);//andamos para pegar os valores do total do header
